@@ -15,10 +15,9 @@ def search_tv_series_soup(tv_series_title):
 
 
 # This function returns link to the page of given tv series.
-def find_tv_series_page_link(tv_series_title):
-    if type(tv_series_title)!= str:
-        print('Invalid argument data type passed to find_link function')    
+def find_tv_series_page_link(tv_series_title):    
     # get search results in html
+    flag_found = -1
     tvr_soup = search_tv_series_soup(tv_series_title)
     tv_temp = tv_series_title.lower().replace('+','')
     tv_temp = tv_temp.lower().replace(' ','')
@@ -26,18 +25,24 @@ def find_tv_series_page_link(tv_series_title):
         stemp = str(a.string)
         if tv_temp in stemp.lower().replace(' ',''):
             link = a['href']
+            flag_found = 1
             break
+    if flag_found == -1:
+        return 'NotFound'
     return base_url+link[0:link.find('?')-1]
 
 # This function returns episodes page in beautifulsoup datatype for given tv series title query for the given season
 # the default for season = -1 gives last season
 def get_episodes_page(tv_series_title, season=-1):
     link = find_tv_series_page_link(tv_series_title)
+
+    if link == 'NotFound':
+        return 'NotFound'
+
     params = {'season': season}
     eps_resp = requests.request('GET', link + '/episodes', params = params)
     eps_soup = bs.BeautifulSoup(eps_resp.text, 'lxml')
     return eps_soup
-a = get_episodes_page('friends')
 
 # This function gets episode date in datetime format from the html value passed to it
 def get_ep_date(ep):
@@ -57,6 +62,8 @@ def get_final_schedule(tv_series_title):
     now_date = datetime.datetime.now().date()
     
     episode_list_page_soup = get_episodes_page(tv_series_title)
+    if episode_list_page_soup == 'NotFound':
+        return 'NotFound'
 
     list_ep = episode_list_page_soup.findAll('div',{'class':'airdate'})
     
