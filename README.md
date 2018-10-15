@@ -4,4 +4,3 @@ This program takes user's Email address and TV series names as input.
 It emails the details of streaming date of next episode/season or the year completion of the TV series in question.
 
 The required information is obtained from IMDb website.
-
