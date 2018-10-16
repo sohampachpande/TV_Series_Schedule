@@ -2,13 +2,17 @@ import requests
 import bs4 as bs
 import re
 import datetime
+import spell_correct as sp
 
 base_url = 'https://www.imdb.com'
 
 # This function returns search result page in beautifulsoup datatype for given tv series title query
 def search_tv_series_soup(tv_series_title):
     search_link = base_url + '/search/title'
-    params = {'title':tv_series_title,'title_type':'tv_series'}
+    # correct_tv_title(w) finds correct spelling. description and code in spell_correct.py
+    # This is for when user commmits small spelling mistakes
+    tv_title = sp.correct_tv_title(tv_series_title)
+    params = {'title': tv_title,'title_type':'tv_series'}
     tvr = requests.request('GET', url = search_link, params = params)
     tvr_soup = bs.BeautifulSoup(tvr.text,'lxml')
     return tvr_soup
@@ -19,17 +23,22 @@ def find_tv_series_page_link(tv_series_title):
     # get search results in html
     flag_found = -1
     tvr_soup = search_tv_series_soup(tv_series_title)
-    tv_temp = tv_series_title.lower().replace('+','')
+    tv_temp = sp.correct_tv_title(tv_series_title)
+    tv_temp = tv_temp.lower().replace('+','')
     tv_temp = tv_temp.lower().replace(' ','')
     for a in tvr_soup.findAll('a', href= True):
-        stemp = str(a.string)
-        if tv_temp in stemp.lower().replace(' ',''):
+        s_temp = str(a.string)
+        s_temp = s_temp.lower().replace(' ','')
+        if tv_temp == s_temp:
             link = a['href']
             flag_found = 1
             break
     if flag_found == -1:
         return 'NotFound'
     return base_url+link[0:link.find('?')-1]
+
+
+# print(find_tv_series_page_link('gae of throns'))
 
 # This function returns episodes page in beautifulsoup datatype for given tv series title query for the given season
 # the default for season = -1 gives last season
@@ -89,4 +98,4 @@ def get_final_schedule(tv_series_title):
         return ("The TV series has finished streaming its episodes in {} {}".format(ep_date.strftime('%B'), ep_date.year))
 
 
-# print(get_final_schedule('game of thrones'))
+# print(get_final_schedule('game of throns'))
