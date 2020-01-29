@@ -1,7 +1,7 @@
 import sqlite3 as sql
 import re
-import email_func
-import retrieve_imdb_data as imdb
+from main import email_func
+from main import retrieve_imdb_data as imdb
 
 # Create a database to store queries
 database_name = 'user_tv_series.db'
@@ -46,46 +46,47 @@ def make_content(user):
     return body_content
 
 
-# take input
-user_dict = {}
-n = int(input("Enter number of users: "))
-for k in range(n):
-    email = input("\nEnter email address:")
-    # check for syntax error in email address using regular expression
-    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-        print('\nThe email entered is syntatically incorrect')
-        email = input("\nEnter email address again: ")
-    tv_string = input("\nEnter TV series names seperated by a comma: ")
-    # split the tv series titles bu using seperator ',' and store them in a list
-    tv_list = tv_string.split(',')
-    user_dict.update({email: tv_list})
+if __name__ == '__main__':
+    # take input
+    user_dict = {}
+    n = int(input("Enter number of users: "))
+    for k in range(n):
+        email = input("\nEnter email address:")
+        # check for syntax error in email address using regular expression
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            print('\nThe email entered is syntatically incorrect')
+            email = input("\nEnter email address again: ")
+        tv_string = input("\nEnter TV series names seperated by a comma: ")
+        # split the tv series titles bu using seperator ',' and store them in a list
+        tv_list = tv_string.split(',')
+        user_dict.update({email: tv_list})
 
-# store input in database
-for user in user_dict:
-    for tv_s in user_dict[user]:
-        conn.execute(
-            'INSERT OR IGNORE INTO TVSeries(USER_EMAIL,TVSERIES) VALUES(?,?)', (user, tv_s))
-        conn.commit()
+    # store input in database
+    for user in user_dict:
+        for tv_s in user_dict[user]:
+            conn.execute(
+                'INSERT OR IGNORE INTO TVSeries(USER_EMAIL,TVSERIES) VALUES(?,?)', (user, tv_s))
+            conn.commit()
 
-# send mails according to input
-m = input("\nEnter comma seperated email-ids and mail would be sent to the email existing in the database\nEnter 'all' (without quotes) if you want to mail to all the user emails:\n")
+    # send mails according to input
+    m = input("\nEnter comma seperated email-ids and mail would be sent to the email existing in the database\nEnter 'all' (without quotes) if you want to mail to all the user emails:\n")
 
-# get unique email address present in database
-user_email_unique = get_distinct_email_address()
+    # get unique email address present in database
+    user_email_unique = get_distinct_email_address()
 
-if m == 'all':
-    # send mail to all email addresses in database
-    for u in user_email_unique:
-        body_content = make_content(u)
-        email_func.send_email(body_content, u)
-else:
-    # send mail only to email addresses specified
-    email_list = m.replace(' ', '').split(',')
-    for u in email_list:
-        if u in user_email_unique:
+    if m == 'all':
+        # send mail to all email addresses in database
+        for u in user_email_unique:
             body_content = make_content(u)
-            status = email_func.send_email(body_content, u)
-            # if mail delivery failed, store error details in database
-            if status != 1:
-                conn.execute(
-                    'UPDATE TVSeries SET LAST_STATUS=? WHERE USER_EMAIL=?', (e, u))
+            email_func.send_email(body_content, u)
+    else:
+        # send mail only to email addresses specified
+        email_list = m.replace(' ', '').split(',')
+        for u in email_list:
+            if u in user_email_unique:
+                body_content = make_content(u)
+                status = email_func.send_email(body_content, u)
+                # if mail delivery failed, store error details in database
+                if status != 1:
+                    conn.execute(
+                        'UPDATE TVSeries SET LAST_STATUS=? WHERE USER_EMAIL=?', (e, u))
